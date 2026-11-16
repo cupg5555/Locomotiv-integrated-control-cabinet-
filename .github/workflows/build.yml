@@ -1,32 +1,31 @@
-name: Build APK
+name: Deploy Web
 
 on: [push, workflow_dispatch]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
-          
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          
-      - name: Build APK
-        run: |
-          flutter create build_temp
-          cp pubspec.yaml build_temp/
-          cp lib/main.dart build_temp/lib/
-          cd build_temp
-          flutter pub get
-          flutter build apk --release
-          
-      - uses: actions/upload-artifact@v4
+      - run: flutter build web
+      - uses: actions/upload-pages-artifact@v3
         with:
-          name: cabinet-app-apk
-          path: build_temp/build/app/outputs/flutter-apk/app-release.apk
+          path: build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
