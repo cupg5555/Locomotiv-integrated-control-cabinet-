@@ -28,6 +28,10 @@ jobs:
       - name: Generate Android project
         run: flutter create . --platforms=android --project-name cabinet_app
 
+      # 关键步骤：在生成骨架后，立刻把你的代码恢复回来
+      - name: Restore main.dart
+        run: git checkout HEAD -- lib/main.dart
+
       - name: Install dependencies
         run: flutter pub get
 
