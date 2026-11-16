@@ -25,22 +25,27 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Generate Android project
-        run: flutter create . --platforms=android --project-name cabinet_app
+      # 1. 让服务器建一个全新的、标准的安卓工程（彻底避免冲突）
+      - name: Create clean Flutter project
+        run: flutter create build_temp --project-name cabinet_app
 
-      # 关键步骤：在生成骨架后，立刻把你的代码恢复回来
-      - name: Restore main.dart
-        run: git checkout HEAD -- lib/main.dart
+      # 2. 把我们写好的代码拷进新工程
+      - name: Copy source files
+        run: |
+          cp pubspec.yaml build_temp/
+          cp lib/main.dart build_temp/lib/
 
-      - name: Install dependencies
-        run: flutter pub get
-
+      # 3. 编译打包
       - name: Build release APK
-        run: flutter build apk --release
+        run: |
+          cd build_temp
+          flutter pub get
+          flutter build apk --release
 
+      # 4. 把成品拿出来
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: cabinet-app-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build_temp/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
