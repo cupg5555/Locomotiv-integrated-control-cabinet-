@@ -25,24 +25,35 @@ jobs:
           channel: 'stable'
           cache: true
 
-      # 1. 让服务器建一个全新的、标准的安卓工程（彻底避免冲突）
       - name: Create clean Flutter project
         run: flutter create build_temp --project-name cabinet_app
 
-      # 2. 把我们写好的代码拷进新工程
       - name: Copy source files
         run: |
           cp pubspec.yaml build_temp/
           cp lib/main.dart build_temp/lib/
 
-      # 3. 编译打包
-      - name: Build release APK
+      - name: Set compatible toolchain versions
         run: |
           cd build_temp
-          flutter pub get
-          flutter build apk --release
+          # 指定 Flutter 3.24 兼容的 Gradle 版本
+          echo "distributionUrl=https\://services.gradle.org/distributions/gradle-8.7-all.zip" > android/gradle/wrapper/gradle-wrapper.properties
+          
+          # 更新 AGP 和 Kotlin 版本
+          sed -i 's/id "com.android.application" version ".*"/id "com.android.application" version "8.5.0"/' android/settings.gradle
+          sed -i 's/id "org.jetbrains.kotlin.android" version ".*"/id "org.jetbrains.kotlin.android" version "2.0.10"/' android/settings.gradle
+          
+          # 确保 compileSdk 为 34
+          sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 34/' android/app/build.gradle
+          sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 34/' android/app/build.gradle
 
-      # 4. 把成品拿出来
+      - name: Clean and Build release APK
+        run: |
+          cd build_temp
+          flutter clean
+          flutter pub get
+          flutter build apk --release --verbose
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
